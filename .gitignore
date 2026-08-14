@@ -3,3 +3,6 @@ session_auth/
 .env
 *.log
 session_auth_invites/
+node_modules/
+auth_info/
+session_auth/
