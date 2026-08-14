@@ -12,6 +12,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "axios": "^1.19.0",
+    "cheerio": "^1.2.0",
     "express": "^5.2.1",
     "node-cron": "^4.6.0",
     "qrcode-terminal": "^0.12.0"

@@ -134,13 +134,18 @@ async function startBot() {
   });
 
   // =========================================================
-  // 📥 REAL-TIME INBOUND LISTENER (Opt-ins & Responses)
+  // 📥 INBOUND LISTENER (Handles Live & Missed Offline Unreads)
   // =========================================================
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return;
-
+  sock.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
+
+      // Ignore messages sent more than 4 hours ago (14400 seconds)
+      const msgTimestamp = msg.messageTimestamp;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (msgTimestamp && (nowSeconds - msgTimestamp > 14400)) {
+        continue;
+      }
 
       const rawJid = msg.key.remoteJid;
       if (rawJid.endsWith('@g.us')) continue; // Ignore groups
@@ -270,8 +275,7 @@ async function runDripWorker(sock) {
       for (let batch = 1; batch <= TOTAL_BATCHES; batch++) {
         if (!isWorkerRunning) break;
 
-        // 1. Fetch only contacts who HAVEN'T been invited (invite_sent = false)
-        // 2. Order by ID ascending so everyone gets their first invite sequentially
+        // Fetch contacts who haven't been invited yet
         const { data: subscribers, error } = await supabase
           .from('group_subscribers')
           .select('id, jid, phone_number')
@@ -317,7 +321,7 @@ async function runDripWorker(sock) {
           if (success) {
             totalSentToday++;
 
-            // Update database so this user is marked as invited and skipped in future runs
+            // Update database so this user is marked as invited
             await supabase
               .from('group_subscribers')
               .update({
